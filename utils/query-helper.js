@@ -1,21 +1,43 @@
 const mysql = require('mysql2/promise');
-const { DATABASE_CONFIG, QUERY_TYPE } = require("./utils");
+const { DATABASE_CONFIG, QUERY_TYPE, getWhereClause, getSelectList, getUpdateFields } = require("./utils");
 const _ = require("underscore");
+const { object } = require('underscore');
 class QueryHelper {
     constructor() {
         this.pool = mysql.createPool(DATABASE_CONFIG);
     }
 
     getInsertQuery(tableName, body) {
+        if (_.isEmpty(body) || tableName) {
+            return null;
+        }
         let keys = Object.keys(body);
         let wildCardArr = _.map(keys, e => "?");
         keys = keys.join(",");
-        let statement = `INSERT INTO ${tableName} (${keys}) values (${wildCardArr.join(",")})`;
+        const statement = `INSERT INTO ${tableName} (${keys}) values (${wildCardArr.join(",")})`;
         let values = Object.values(body);
         return {
             statement,
             values
         }
+    }
+
+    getSelectQuery(tableName, query) {
+        if (!tableName) {
+            return null;
+        }
+        let selectList = getSelectList(query.selectList);
+        let findStatement = getWhereClause(query.where);
+        selectList = Array.isArray(selectList) ? selectList.join(",") : selectList;
+        const statement = `SELECT ${selectList} FROM ${tableName} ${findStatement}`;
+        return { statement };
+    }
+
+    getUpdateQuery(tableName, body) {
+        let findStatement = getWhereClause(body.query);
+        let updateFields = getUpdateFields(body.data);
+        let statement = `UPDATE ${tableName} SET ${updateFields} ${findStatement}`;
+        return { statement };
     }
 
     async executeQuery(type, tableName, body) {
@@ -24,17 +46,29 @@ class QueryHelper {
             case QUERY_TYPE.INSERT:
                 queryObject = this.getInsertQuery(tableName, body);
                 break;
+            case QUERY_TYPE.SELECT:
+                queryObject = this.getSelectQuery(tableName, body);
+                break;
+            case QUERY_TYPE.UPDATE:
+                queryObject = this.getUpdateQuery(tableName, body);
+                break;
             default:
                 queryObject = null;
                 break;
         }
         if (queryObject) {
-            let connection = await this.pool.getConnection();
-            let data = await connection.execute(queryObject.statement, queryObject.values);
-            this.pool.releaseConnection(connection);
-            return data;
+            try {
+                var connection = await this.pool.getConnection();
+                const [rows, fields] = await connection.execute(queryObject.statement, queryObject.values);
+                connection.release();
+                return rows;
+            } catch (error) {
+                console.log(error);
+                connection.release();
+                throw error;
+            }
         } else {
-            return false;
+            throw new Error(`Unable to make query for ${tableName}, for ${JSON.stringify(body)}`);
         }
 
     }
