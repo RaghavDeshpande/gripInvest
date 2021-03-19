@@ -62,3 +62,27 @@ BEGIN
     SET NEW.updatedAt = NOW();
 END$$
 DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS `grip_invest`.`transactions_BEFORE_INSERT`;
+
+DELIMITER $$
+USE `grip_invest`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `grip_invest`.`transactions_BEFORE_INSERT` BEFORE INSERT ON `transactions` FOR EACH ROW
+BEGIN
+	SET NEW.createdAt = NOW();
+    SET NEW.updatedAt = NOW();
+    SET NEW.createdBy = USER();
+    SET NEW.updatedBy = USER();
+END$$
+DELIMITER ;
+DROP TRIGGER IF EXISTS `grip_invest`.`transactions_BEFORE_UPDATE`;
+
+DELIMITER $$
+USE `grip_invest`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `grip_invest`.`transactions_BEFORE_UPDATE` BEFORE UPDATE ON `transactions` FOR EACH ROW
+BEGIN
+ SET NEW.updatedAt = NOW();
+ SET NEW.updatedBy = USER();
+END$$
+DELIMITER ;

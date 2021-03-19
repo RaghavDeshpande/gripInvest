@@ -15,10 +15,23 @@ const QUERY_TYPE = {
     UPDATE: "update"
 }
 
+const TRANSACTION = {
+    "LOAD": "load",
+    "WITHDRAW": "withdraw",
+    "INVEST": "invest",
+    "RETURNS": "returns"
+}
+
+const STATUS = {
+    "SUCCESS": "success",
+    "FAILED": "failed",
+    "PENDNG": "pending"
+}
+
 function getSelectList(selectList) {
     selectList = selectList && typeof selectList === "string" ? JSON.parse(selectList) : selectList;
     selectList = selectList && Array.isArray(selectList) ? selectList : null;
-    return selectList ? selectList.join(",") : "*";
+    return selectList && selectList.length ? selectList.join(",") : "*";
 }
 
 function getWhereClause(where) {
@@ -49,7 +62,7 @@ function getUpdateFields(object) {
     for (let i = 0; i < keys.length; i++) {
         if (values[i] && typeof values[i] === "string") {
             update += `${keys[i]} = "${values[i]}"`;
-        } else if (values[i] && typeof values[i] === "number") {
+        } else if (typeof values[i] === "number") {
             update += `${keys[i]} = ${values[i]}`;
         }
         if (keys[i + 1]) {
@@ -60,5 +73,6 @@ function getUpdateFields(object) {
 }
 
 module.exports = {
-    DATABASE_CONFIG, QUERY_TYPE, getSelectList, getWhereClause, getUpdateFields
+    DATABASE_CONFIG, QUERY_TYPE, TRANSACTION, STATUS,
+    getSelectList, getWhereClause, getUpdateFields
 }

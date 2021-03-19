@@ -1,6 +1,5 @@
 const UserModule = require("../modules/user.module");
 const _ = require("underscore");
-const { static } = require("express");
 class UserServlet {
     static async create(req, res) {
         try {

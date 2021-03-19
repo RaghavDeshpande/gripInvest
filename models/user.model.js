@@ -1,5 +1,5 @@
-const { response } = require("express");
 const QueryHelper = require("../utils/query-helper");
+const QueryObject = require("../utils/query-object");
 const { QUERY_TYPE } = require("../utils/utils");
 const TABLENAME = "user_details";
 
@@ -8,9 +8,8 @@ class User {
     static async create(obj) {
         /**@todo: save password using salt */
         let result = await QueryHelper.executeQuery(QUERY_TYPE.INSERT, TABLENAME, obj);
-        let queryObject = {
-            where: [{ id: result.insertId }]
-        }
+        let queryObject = new QueryObject();
+        queryObject.where.push({ id: result.insertId });
         let user = await User.get(queryObject);
         return user;
     }
@@ -22,7 +21,7 @@ class User {
 
     static async update(body) {
         await QueryHelper.executeQuery(QUERY_TYPE.UPDATE, TABLENAME, body);
-        let result = await User.get({ where: body.query });
+        let result = await User.get({ where: body.where });
         return result;
     }
 }

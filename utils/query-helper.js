@@ -8,7 +8,7 @@ class QueryHelper {
     }
 
     getInsertQuery(tableName, body) {
-        if (_.isEmpty(body) || tableName) {
+        if (_.isEmpty(body) || !tableName) {
             return null;
         }
         let keys = Object.keys(body);
@@ -34,7 +34,7 @@ class QueryHelper {
     }
 
     getUpdateQuery(tableName, body) {
-        let findStatement = getWhereClause(body.query);
+        let findStatement = getWhereClause(body.where);
         let updateFields = getUpdateFields(body.data);
         let statement = `UPDATE ${tableName} SET ${updateFields} ${findStatement}`;
         return { statement };
@@ -60,12 +60,13 @@ class QueryHelper {
             try {
                 var connection = await this.pool.getConnection();
                 const [rows, fields] = await connection.execute(queryObject.statement, queryObject.values);
-                connection.release();
                 return rows;
             } catch (error) {
                 console.log(error);
-                connection.release();
                 throw error;
+            } finally {
+                connection.release();
+                // this.pool.end();
             }
         } else {
             throw new Error(`Unable to make query for ${tableName}, for ${JSON.stringify(body)}`);
